@@ -20,6 +20,7 @@ You will have to create 3 plots based on the datasets and instructions detailed 
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(tidytuesdayR)
+library(forcats)
 ```
 
 ## Task 1: Climbing expeditions
@@ -31,6 +32,29 @@ The 2020-09-22 TidyTueday datasets are about climbing expeditions. From the thre
 -   The bar colors use the viridis palette and light theme.
 
 ```{r}
+
+TidyTueday_data_2020_09_22 <- tt_load('2020-09-22')
+expeditions <- TidyTueday_data_2020_09_22$expeditions
+
+top15_peak <- expeditions %>% 
+  mutate(peak_name = fct_lump(peak_name, n = 15)) %>% 
+  filter(peak_name != "Other") %>% 
+  group_by(peak_name, season) %>%
+  summarise(expeditions_count = n(), .groups = "drop") %>%
+  mutate(peak_name = fct_reorder(peak_name, expeditions_count, .fun = sum))
+
+ggplot(top15_peak, aes(x = expeditions_count, y = peak_name, fill = season)) +
+  geom_bar(stat = "identity", position = "stack") + 
+  scale_fill_viridis_d() +
+  theme_light() +
+  theme(legend.position = "bottom") +
+  labs(
+    title = "The 15 most popular peaks stacked by season of expedition",
+    x = "Number of expeditions",
+    y = NULL,
+    fill = "Season"
+  )
+
 
 ```
 

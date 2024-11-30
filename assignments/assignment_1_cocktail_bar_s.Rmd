@@ -49,9 +49,10 @@ cleaned_cocktail_data <- cocktail_data %>%
   mutate(ingredients = str_squish(ingredients))
 
 cleaned_cocktail_data <- cleaned_cocktail_data %>%
-  mutate(ingredients = str_remove_all(ingredients, "\\b((\\d+\\d+\\s*/\\s*\\d+)|(\\d+\\s*/\\s*\\d+)|(\\d+\\s*\\.\\s*\\d+)|(\\d+))\\s*(oz|dashes|dash|ml|cl|tsp|tbsp)?\\s*\\b")) %>%
+  mutate(ingredients = str_remove_all(ingredients, "\\b((\\d+\\d+\\s*/\\s*\\d+)|(\\d+\\s*/\\s*\\d+)|(\\d+\\s*\\.\\s*\\d+)|(\\d+))\\s*(oz|bsp|dashes|dash|ml|cl|tsp|tbsp)?\\s*\\b")) %>%
   mutate(ingredients = str_remove_all(ingredients, "\\(\\s*%\\s*abv\\s*\\)")) %>%
   mutate(ingredients = str_squish(ingredients))
+
 ```
 
 ## 3. All ingredients in alphabetical order
@@ -114,6 +115,11 @@ rare_ingredient <- cleaned_cocktail_data %>%
   summarise(n = n()) %>%
   arrange(n) %>%
   filter(n==min(n))
+
+count_ingredient <- cleaned_cocktail_data %>%
+  group_by(ingredients) %>%
+  summarise(n = n()) %>%
+  arrange(n)
 
 count(rare_ingredient) 
 
