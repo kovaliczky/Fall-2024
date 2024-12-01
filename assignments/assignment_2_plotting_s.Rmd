@@ -21,6 +21,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(tidytuesdayR)
 library(forcats)
+library(scales)
 ```
 
 ## Task 1: Climbing expeditions
@@ -69,6 +70,23 @@ Notes:
 -   The line size is 1.2, the colors are from the brewer "Dark2" palette. The theme is set to minimal.
 
 ```{r}
+TidyTueday_data_2019_02_19 <- tt_load('2019-02-19')
+phd_by_field <- TidyTueday_data_2019_02_19$phd_by_field
+
+phd_by_year_field <- phd_by_field %>%
+  group_by(year, broad_field) %>%
+  summarize(phd_count = sum(n_phds, na.rm = T))
+
+ggplot(phd_by_year_field, aes(x = year, y = phd_count, color = broad_field, group = broad_field)) +
+  geom_line(size = 1.2) +
+  scale_x_continuous(breaks = pretty_breaks()) +
+  scale_y_continuous(labels = comma_format()) +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal() +
+  labs(title = "Number of awarded Ph.D.-s in the US by Year",
+       x = NULL,
+       y = NULL,
+       color = "Broad field")
 
 ```
 
@@ -83,5 +101,28 @@ Notes:
 -   The point size is 2, . The theme is set to light.
 
 ```{r}
+TidyTueday_data_2019_11_05 <- tt_load('2019-11-05')
+commute <- TidyTueday_data_2019_11_05$commute
 
+commute_by_state <- commute %>%
+  group_by(state_abb, mode) %>%
+  mutate(total_commutes = sum(n, na.rm = T)) %>% 
+  select(state_abb, state_region, mode, total_commutes) %>% 
+  distinct() %>% 
+  pivot_wider(names_from = mode, values_from = total_commutes)
+
+ggplot(commute_by_state, aes(x = Walk, y = Bike, color = state_region)) +
+  geom_point(size = 2) +
+  scale_x_log10(labels = comma_format()) +
+  scale_y_log10(labels = comma_format(), limits = c(20, NA)) +
+  geom_text(aes(label = state_abb),  color = "black", na.rm = TRUE) +
+  #geom_text_repel(aes(label = state_abb),
+   #               color = "black",
+    #              max.overlaps = )
+  theme_light() +
+  labs(title = "Title number of people walking vs. biking to work in each USA state",
+       x = "Number of ppl walking to work (log N)",
+       y = "Number of ppl biking to work (log N)",
+       color = "State region")
+  
 ```

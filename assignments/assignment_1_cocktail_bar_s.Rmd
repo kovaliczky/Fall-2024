@@ -21,6 +21,8 @@ library(readr)
 library(dplyr)
 library(tidyr)
 library(stringr)
+library(knitr)
+library(kableExtra)
 ```
 
 # Background
@@ -41,7 +43,7 @@ cocktail_data <- read_tsv("https://raw.githubusercontent.com/nthun/cocktail-bala
 
 ## 2. Transform the data table and clean the ingredient variable!
 
-The ingredients are currently in a single cell for each cocktail. It would be better to put them in separate rows. Also, the variable should be cleaned of all quantities (e.g. 1/2 oz, 2 dashes, etc.), and the indicator of alcohol content (e.g. 47.3% abv). You will need to use this cleaned table in later tasks|<b4/>.
+The ingredients are currently in a single cell for each cocktail. It would be better to put them in separate rows. Also, the variable should be cleaned of all quantities (e.g. 1/2 oz, 2 dashes, etc.), and the indicator of alcohol content (e.g. 47.3% abv). You will need to use this cleaned table in later tasks.
 
 ```{r}
 cleaned_cocktail_data <- cocktail_data %>% 
@@ -64,6 +66,8 @@ sorted_ingredients <- cleaned_cocktail_data %>%
   select(ingredients) %>%
   distinct(ingredients) %>%
   arrange(str_to_upper(ingredients))
+
+print(sorted_ingredients, n = "all")
   
 ```
 
@@ -91,6 +95,8 @@ max_count <- top_ingredients$n[10]
 top_ingredients <- top_ingredients %>%
   filter(n >= max_count)
 
+print(top_ingredients, n = "all")
+
 ```
 
 ## 6. Which cocktail(s) has/have the most ingredients?
@@ -105,21 +111,21 @@ top_coctails <- cleaned_cocktail_data %>%
   arrange(desc(n)) %>%
   filter(n == max(n))
 
+print(top_coctails, n = "all")
+
 ```
 
 ## 7. How many ingredients appear in only one cocktail (rare ingredient)?
 
 ```{r}
-rare_ingredient <- cleaned_cocktail_data %>%
-  group_by(ingredients) %>%
-  summarise(n = n()) %>%
-  arrange(n) %>%
-  filter(n==min(n))
 
 count_ingredient <- cleaned_cocktail_data %>%
   group_by(ingredients) %>%
   summarise(n = n()) %>%
   arrange(n)
+
+rare_ingredient <- count_ingredient %>%
+  filter(n==min(n))
 
 count(rare_ingredient) 
 
@@ -134,6 +140,8 @@ cockatils_with_rare_ingredient <- cleaned_cocktail_data %>%
   select(name) %>%
   distinct(name)
 
+print(cockatils_with_rare_ingredient, n = "all")
+
 ```
 
 ## 9. What are the cocktails without rare ingredients?
@@ -144,6 +152,8 @@ cockatils_without_rare_ingredient <- cleaned_cocktail_data %>%
   filter(!name %in% cockatils_with_rare_ingredient$name)  %>%
   select(name) %>%
   distinct(name)
+
+print(cockatils_without_rare_ingredient, n = "all")
   
 ```
 
@@ -163,6 +173,11 @@ cocktail_ingredient_table <- cleaned_cocktail_data %>%
     values_fill = ""
   )
 
+#print(cocktail_ingredient_table, n = Inf)
+kable(cocktail_ingredient_table, "html", options = "scrollX") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "hover", "condensed")) %>%
+  row_spec(0, bold = T) %>%
+  column_spec(1, bold = T)
 
 ```
 
