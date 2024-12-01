@@ -115,10 +115,7 @@ ggplot(commute_by_state, aes(x = Walk, y = Bike, color = state_region)) +
   geom_point(size = 2) +
   scale_x_log10(labels = comma_format()) +
   scale_y_log10(labels = comma_format(), limits = c(20, NA)) +
-  geom_text(aes(label = state_abb),  color = "black", na.rm = TRUE) +
-  #geom_text_repel(aes(label = state_abb),
-   #               color = "black",
-    #              max.overlaps = )
+  geom_text(aes(label = state_abb),  color = "black", na.rm = TRUE, check_overlap = TRUE) +
   theme_light() +
   labs(title = "Title number of people walking vs. biking to work in each USA state",
        x = "Number of ppl walking to work (log N)",
