@@ -922,6 +922,49 @@ lm.beta(model_complex)</code></pre>
 # The regression equation for the complex model is:
 # Pain = 1.624 - 0.032 * Age + 0.376 * SexMale - 0.004 * STAI_trait + 0.081 * Pain_Cat - 0.148 * Mindfulness + 0.537 * Cortisol_Serum</code></pre>
 <p>Compare the two models.</p>
+<pre class="r"><code>library(stargazer)</code></pre>
+<pre><code>## 
+## Please cite as:</code></pre>
+<pre><code>##  Hlavac, Marek (2022). stargazer: Well-Formatted Regression and Summary Statistics Tables.</code></pre>
+<pre><code>##  R package version 5.2.3. https://CRAN.R-project.org/package=stargazer</code></pre>
+<pre class="r"><code>stargazer(model_simple, model_complex, type = &quot;text&quot;, title = &quot;Comparison of Models&quot;)</code></pre>
+<pre><code>## 
+## Comparison of Models
+## ==================================================================
+##                                  Dependent variable:              
+##                     ----------------------------------------------
+##                                          pain                     
+##                              (1)                     (2)          
+## ------------------------------------------------------------------
+## age                       -0.084***                -0.032         
+##                            (0.023)                 (0.023)        
+##                                                                   
+## sexmale                     0.138                  0.376*         
+##                            (0.236)                 (0.214)        
+##                                                                   
+## STAI_trait                                         -0.004         
+##                                                    (0.027)        
+##                                                                   
+## pain_cat                                          0.081***        
+##                                                    (0.028)        
+##                                                                   
+## mindfulness                                        -0.148         
+##                                                    (0.125)        
+##                                                                   
+## cortisol_serum                                    0.537***        
+##                                                    (0.124)        
+##                                                                   
+## Constant                   8.263***                 1.624         
+##                            (0.960)                 (1.691)        
+##                                                                   
+## ------------------------------------------------------------------
+## Observations                 155                     155          
+## R2                          0.078                   0.356         
+## Adjusted R2                 0.066                   0.330         
+## Residual Std. Error    1.464 (df = 152)       1.240 (df = 148)    
+## F Statistic         6.460*** (df = 2; 152) 13.653*** (df = 6; 148)
+## ==================================================================
+## Note:                                  *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
 <pre class="r"><code># Calculate Adjusted R-squared for both models
 adj_r2_simple &lt;- summary(model_simple)$adj.r.squared
 adj_r2_complex &lt;- summary(model_complex)$adj.r.squared
@@ -929,9 +972,6 @@ adj_r2_complex &lt;- summary(model_complex)$adj.r.squared
 # Calculate AIC for both models
 aic_simple &lt;- AIC(model_simple)
 aic_complex &lt;- AIC(model_complex)
-
-# Perform Likelihood Ratio Test
-lrt &lt;- anova(model_simple, model_complex)
 
 # Create a comparison table
 comparison_table &lt;- data.frame(
@@ -951,7 +991,10 @@ print(&quot;Model Comparison Table:&quot;)</code></pre>
 <pre><code>##               Metric Simple_Model Complex_Model
 ## 1 Adjusted R-squared        0.066          0.33
 ## 2                AIC      562.950        515.32</code></pre>
-<pre class="r"><code># Add Likelihood Ratio Test results to the table
+<pre class="r"><code># Perform Likelihood Ratio Test
+lrt &lt;- anova(model_simple, model_complex)
+
+# Add Likelihood Ratio Test results to the table
 lrt_results &lt;- data.frame(
   Metric = c(&quot;F-statistic&quot;, &quot;p-value&quot;),
   Value = c(round(lrt$`F`[2], 3), round(lrt$`Pr(&gt;F)`[2], 5))

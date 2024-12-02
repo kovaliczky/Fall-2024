@@ -403,6 +403,9 @@ lm.beta(model_complex)
 Compare the two models.
 
 ```{r}
+library(stargazer)
+
+stargazer(model_simple, model_complex, type = "text", title = "Comparison of Models")
 
 # Calculate Adjusted R-squared for both models
 adj_r2_simple <- summary(model_simple)$adj.r.squared
@@ -411,9 +414,6 @@ adj_r2_complex <- summary(model_complex)$adj.r.squared
 # Calculate AIC for both models
 aic_simple <- AIC(model_simple)
 aic_complex <- AIC(model_complex)
-
-# Perform Likelihood Ratio Test
-lrt <- anova(model_simple, model_complex)
 
 # Create a comparison table
 comparison_table <- data.frame(
@@ -429,6 +429,9 @@ comparison_table <- data.frame(
 # Display comparison table
 print("Model Comparison Table:")
 print(comparison_table)
+
+# Perform Likelihood Ratio Test
+lrt <- anova(model_simple, model_complex)
 
 # Add Likelihood Ratio Test results to the table
 lrt_results <- data.frame(
