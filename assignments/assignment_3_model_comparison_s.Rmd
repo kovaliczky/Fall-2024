@@ -59,6 +59,9 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
+library(readxl)
+
+data <- read_excel("../data/assignment_3_dataset.xlsx")
 
 ```
 
@@ -69,6 +72,104 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
 ```{r}
+library(dplyr)
+library(ggplot2)
+library(skimr)
+library(corrplot)
+library(tidyr)
+
+# Preview the data
+head(data)
+
+# Check the structure of the data
+str(data)
+
+# Summary statistics
+summary(data)
+
+# Check for missing data
+colSums(is.na(data)) 
+# Conclusion: no missing data
+
+# Plot histograms for all numeric variables
+data %>%
+  select(where(is.numeric)) %>%
+  gather() %>%
+  ggplot(aes(x = value)) +
+  geom_histogram(bins = 30) +
+  facet_wrap(~ key, scales = 'free_x') 
+# Conclusion: In the case of pain, there is an outlier, the others appear to be normally distributed
+
+# Boxplot for numerical variables to check for outliers
+ggplot(data, aes(x = factor(0), y = pain)) +
+  geom_boxplot() +
+  ylab("Pain") +
+  ggtitle("Boxplot of Pain Levels")
+# Conclusion: There is an outlier that needs to be removed because its value is very high.
+
+ggplot(data, aes(x = factor(0), y = age)) +
+  geom_boxplot() +
+  ylab("Age") +
+  ggtitle("Boxplot of Age Levels")
+# Conclusion: There is an outlier that I decided not to remove because it has no effect on the normal distribution.
+
+ggplot(data, aes(x = factor(0), y = STAI_trait)) +
+  geom_boxplot() +
+  ylab("STAI trait") +
+  ggtitle("Boxplot of STAI Trait Levels")
+# Conclusion: There are outliers that I decided not to remove because it has no effect on the normal distribution.
+
+ggplot(data, aes(x = factor(0), y = pain_cat)) +
+  geom_boxplot() +
+  ylab("Pain Catastrophizing") +
+  ggtitle("Boxplot of Pain Catastrophizing Levels")
+# Conclusion: There are outliers that I decided not to remove because it has no effect on the normal distribution.
+
+ggplot(data, aes(x = factor(0), y = cortisol_serum)) +
+  geom_boxplot() +
+  ylab("Cortisol Serum") +
+  ggtitle("Boxplot of Cortisol Serum Levels")
+# Conclusion: No outliers.
+
+ggplot(data, aes(x = factor(0), y = cortisol_saliva)) +
+  geom_boxplot() +
+  ylab("Cortisol Saliva") +
+  ggtitle("Boxplot of Cortisol Saliva Levels")
+# Conclusion: No outliers.
+
+ggplot(data, aes(x = factor(0), y = mindfulness)) +
+  geom_boxplot() +
+  ylab("Mindfulness") +
+  ggtitle("Boxplot of Mindfulness Levels")
+# Conclusion: There is an outlier that I decided not to remove because it has no effect on the normal distribution.
+
+ggplot(data, aes(x = factor(0), y = weight)) +
+  geom_boxplot() +
+  ylab("Weight") +
+  ggtitle("Boxplot of Weight Levels")
+# Conclusion: I decided to remove the oulier under 40 kg because it is a very low body weight, I assume it is a typo
+
+ggplot(data, aes(x = factor(0), y = IQ)) +
+  geom_boxplot() +
+  ylab("IQ") +
+  ggtitle("Boxplot of IQ Levels")
+# Conclusion: I decided to remove the ouliers under IQ 70 because they are very low
+
+ggplot(data, aes(x = factor(0), y = household_income)) +
+  geom_boxplot() +
+  ylab("Household Income") +
+  ggtitle("Boxplot of Household Income Levels")
+# Conclusion: There is an outlier that I decided not to remove because it has no effect on the normal distribution.
+
+# Calculate correlation matrix for numerical variables
+cor_matrix <- cor(data %>% select(where(is.numeric)), use = "complete.obs")
+# Plot correlation matrix
+corrplot(cor_matrix, method = "circle")
+# Conclusion: The strong correlation between Cortisol Serum and Cortisol Saliva should be taken into account in further statistical analyses
+
+# Check distribution of categorical variables
+table(data$sex)
+# Conclusion: One of the category variables is written out, woman should be changed to female.
 
 ```
 
@@ -77,6 +178,22 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
+library(car)
+
+# Adjust according to the correct pain range
+data <- data %>% filter(pain <= 10)
+
+# Recode the gender variable
+data$sex <- recode(data$sex, "'woman' = 'female'")
+
+
+# Not relevant for the modell but I removed the following outliers:
+
+# Remove body weight entries that are below 40 kg
+data <- data %>% filter(weight >= 40)
+
+# Remove outliers of very low IQ
+data <- data %>% filter(IQ >= 70)
 
 ```
 
@@ -87,6 +204,8 @@ In order to test the more complex model for outliers and to test the assumptions
 
 ```{r}
 
+model_complex <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum + cortisol_saliva, data = data)
+
 ```
 
 #### Checking for influential outliers
@@ -94,6 +213,15 @@ In order to test the more complex model for outliers and to test the assumptions
 Check for outlier values in the model.
 
 ```{r}
+
+# Calculate Cook's distance
+cooks_dist <- cooks.distance(model_complex)
+
+# Print the observations with Cook's distance > 1
+influential <- which(cooks_dist > 1)
+print(influential)
+
+# There are no observations with a Cook's distance above 1, suggesting that no individual data point has a disproportionately large influence on the regression model.
 
 ```
 
@@ -103,17 +231,36 @@ Check the normality assumption.
 
 ```{r}
 
+# Shapiro-Wilk test for normality
+shapiro.test(residuals(model_complex))
+
+# Q-Q plot of residuals
+qqnorm(residuals(model_complex))
+qqline(residuals(model_complex), col = "red")
+
+# Conclusion: The Shapiro-Wilk normality test indicates that the residuals follow a normal distribution (W = 0.9936, p-value = 0.7278), as the p-value is greater than the commonly used significance level of 0.05.
+
 ```
 
 Check the linearity assumption.
 
 ```{r}
 
+# Residuals vs Fitted plot
+plot(model_complex,1)
+
+# Based on the scatter plot of the given residuals vs. fitted values, the linearity condition is not perfectly met.
 ```
 
 Check the homoscedasticty assumption (homogeneity of variance).
 
 ```{r}
+
+library(lmtest)
+
+bptest(model_complex)
+
+# Conclusion: The results of the Breusch-Pagan test (BP = 11.077, p-value = 0.1353) suggest that there is no significant evidence of heteroscedasticity in the model, indicating that the assumption of homoscedasticity holds.
 
 ```
 
@@ -127,6 +274,12 @@ http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity
 
 ```{r}
 
+library(car)
+
+vif(model_complex)
+
+# The VIF values indicate that while most predictors have no significant multicollinearity, the cortisol_serum and cortisol_saliva variables show higher VIF values, suggesting potential multicollinearity between them, which may require further investigation or adjustment.
+
 ```
 
 ### Making decision based on model diagnostics
@@ -134,12 +287,24 @@ http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity
 If based on the assumption tests you decide to drop a predictor variable you should do that here. Create your updated model.
 
 ```{r}
+# I will keep cortisol_serum because, as I know, it is generally considered a more reliable and commonly used measure in medical research for assessing stress and its relation to pain
+
+updated_model_complex <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum, data = data)
 
 ```
 
 #### Checking outliers of the updated model
 
 ```{r}
+
+# Calculate Cook's distance
+cooks_dist <- cooks.distance(updated_model_complex)
+
+# Print the observations with Cook's distance > 1
+influential <- which(cooks_dist > 1)
+print(influential)
+
+# There are no observations with a Cook's distance above 1, suggesting that no individual data point has a disproportionately large influence on the regression model.
 
 ```
 
@@ -149,11 +314,25 @@ Normality assumption
 
 ```{r}
 
+# Shapiro-Wilk test for normality
+shapiro.test(residuals(updated_model_complex))
+
+# Q-Q plot of residuals
+qqnorm(residuals(updated_model_complex))
+qqline(residuals(updated_model_complex), col = "red")
+
+# Conclusion: The Shapiro-Wilk normality test indicates that the residuals follow a normal distribution (W = 0.99172, p-value = 0.5086), as the p-value is greater than the commonly used significance level of 0.05.
+
 ```
 
 Linearity assumption
 
 ```{r}
+
+# Residuals vs Fitted plot
+plot(updated_model_complex,1)
+
+# Based on the scatter plot of the given residuals vs. fitted values, the linearity condition is not perfectly met.
 
 ```
 
@@ -161,12 +340,23 @@ Homoscedasticty assumption (homogeneity of variance)
 
 ```{r}
 
+library(lmtest)
+
+bptest(updated_model_complex)
+
+# Conclusion: The results of the Breusch-Pagan test (BP = 9.882, p-value = 0.1297) suggest that there is no significant evidence of heteroscedasticity in the model, indicating that the assumption of homoscedasticity holds.
+
 ```
 
 Multicollinearity assumption
 
 ```{r}
 
+library(car)
+
+vif(updated_model_complex)
+
+# The VIF values indicate that predictors have no significant multicollinearity.
 ```
 
 ## Model comparison
@@ -175,11 +365,38 @@ Create the simple model and get the results of the model that needs to be report
 
 ```{r}
 
+model_simple <- lm(pain ~ age + sex, data = data)
+
+summary(model_simple)
+
+# Standardized Coefficients
+library(lm.beta)
+lm.beta(model_simple)
+
+
+# The simple linear regression model explains a modest 6.62% of the variance in pain (Adjusted R-squared = 0.06622). While the model as a whole is statistically significant (F(2,152) = 6.46, p < 0.001), only age appears to be a significant predictor of pain (p < 0.001). Sex, on the other hand, is not a significant predictor (p = 0.558).
+
+# The regression equation for the simple model is:
+# Pain = 8.263 - 0.084 * Age + 0.138 * sex(Male)
+
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
 ```{r}
+
+model_complex <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum, data = data)
+
+summary(model_complex)
+
+# Standardized Coefficients
+library(lm.beta)
+lm.beta(model_complex)
+
+# The more complex model explains 33.02% of the variance in pain (Adjusted R-squared = 0.3302). The model is statistically significant overall (F(6,148) = 13.65, p < 0.001). Among the predictors, only pain catastrophizing and serum cortisol emerged as significant predictors of pain (p < 0.05).
+
+# The regression equation for the complex model is:
+# Pain = 1.624 - 0.032 * Age + 0.376 * SexMale - 0.004 * STAI_trait + 0.081 * Pain_Cat - 0.148 * Mindfulness + 0.537 * Cortisol_Serum
 
 ```
 
@@ -187,5 +404,50 @@ Compare the two models.
 
 ```{r}
 
+# Calculate Adjusted R-squared for both models
+adj_r2_simple <- summary(model_simple)$adj.r.squared
+adj_r2_complex <- summary(model_complex)$adj.r.squared
+
+# Calculate AIC for both models
+aic_simple <- AIC(model_simple)
+aic_complex <- AIC(model_complex)
+
+# Perform Likelihood Ratio Test
+lrt <- anova(model_simple, model_complex)
+
+# Create a comparison table
+comparison_table <- data.frame(
+  Metric = c("Adjusted R-squared", "AIC"),
+  Simple_Model = c(round(adj_r2_simple, 3), round(aic_simple, 2)),
+  Complex_Model = c(round(adj_r2_complex, 3), round(aic_complex, 2))
+)
+
+# The simple model explains only 6.6% of the variance in pain (Adjusted R-squared = 0.066). In contrast, the complex model provides a substantially better fit, explaining 33% of the variance in pain (Adjusted R-squared = 0.33). This indicates that the additional predictors in the complex model significantly improve the model's ability to account for the variability in pain.
+
+# The simple model has an AIC of 562.95, while the complex model has a lower AIC of 515.32. A lower AIC indicates a better fit to the data, considering the model's complexity.
+
+# Display comparison table
+print("Model Comparison Table:")
+print(comparison_table)
+
+# Add Likelihood Ratio Test results to the table
+lrt_results <- data.frame(
+  Metric = c("F-statistic", "p-value"),
+  Value = c(round(lrt$`F`[2], 3), round(lrt$`Pr(>F)`[2], 5))
+)
+
+print("Likelihood Ratio Test Results:")
+print(lrt_results)
+
+# The Likelihood Ratio Test (LRT) indicates a significant improvement in model fit when moving from the simple to the complex model. The large F-statistic (15.977) and the extremely small p-value (p < 0.001) suggest that the additional predictors in the complex model contribute significantly to explaining the variation in the outcome variable (pain). This implies that the complex model provides a more accurate and informative representation of the underlying relationships between the variables.
+
+
 ```
 
+## Discussion
+
+The results show that the more complex model, which includes psychological and hormone measures, provides a significantly better fit compared to the simpler model. The adjusted R-squared of the simple model was 0.066, indicating it explained only 6.6% of the variance in pain, while the complex model explained 33% of the variance (Adjusted R-squared = 0.33). Additionally, the complex model had a lower AIC value (515.32 vs. 562.95), further suggesting a better fit.
+
+The Likelihood Ratio Test confirmed that the improvement in fit was statistically significant (F-statistic = 15.977, p < 0.001). Including psychological variables such as pain catastrophizing and mindfulness, as well as cortisol serum levels, allowed the model to better capture the factors influencing pain. Specifically, pain catastrophizing and cortisol serum were significant predictors of pain in the complex model, providing valuable insights that were not evident in the simpler model.
+
+In conclusion, including psychological and hormonal measures added substantial explanatory power, demonstrating the importance of these variables in understanding pain.
